@@ -1,6 +1,6 @@
 // components/ActionsModal.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SimpleModal from "./SimpleModal";
 import MonacoEditorWrapper from "./MonacoEditorWrapper";
 
@@ -8,6 +8,13 @@ import {resolveJsonPathValue, parseString, stringify} from "openapi-format";
 import ButtonDownload from "@/components/ButtonDownload";
 import ButtonUrlModal from "@/components/ButtonUrlModal";
 import ButtonUpload from "@/components/ButtonUpload";
+import JSONPathAutocomplete from "./JSONPathAutocomplete";
+import {
+  generatePathSuggestions,
+  DEFAULT_JSONPATH_PARTS,
+  extractOpenAPISpecificPaths,
+  getContextualSuggestions
+} from "@/utils/jsonPathUtils";
 
 interface Action {
   target: string;
@@ -33,6 +40,10 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
     title: "",
     version: "",
   });
+  const [jsonPathSuggestions, setJsonPathSuggestions] = useState<string[]>(DEFAULT_JSONPATH_PARTS);
+  const [openapiObj, setOpenapiObj] = useState<Record<string, unknown>>({});
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentEditingPath, setCurrentEditingPath] = useState<{index: number, path: string} | null>(null);
 
   // Initialize actions from overlaySet when modal opens
   useEffect(() => {
@@ -53,10 +64,55 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
           version: info.version || "",
         });
       }
+
+      // Parse OpenAPI schema for JSONPath suggestions
+      try {
+        const parsedOpenApi = await parseString(openapi) as Record<string, unknown>;
+        setOpenapiObj(parsedOpenApi);
+
+        // Generate comprehensive JSONPath suggestions from schema
+        const commonSuggestions = DEFAULT_JSONPATH_PARTS;
+        const extractedSuggestions = extractOpenAPISpecificPaths(parsedOpenApi);
+        const generalSuggestions = generatePathSuggestions(parsedOpenApi);
+
+        // Merge and deduplicate all suggestions
+        const allSuggestions = Array.from(new Set([
+          ...commonSuggestions,
+          ...extractedSuggestions,
+          ...generalSuggestions
+        ]));
+
+        setJsonPathSuggestions(allSuggestions);
+      } catch (error) {
+        console.error("Error parsing OpenAPI schema for suggestions:", error);
+      }
     };
 
     initialize();
   }, [overlaySet, openapi, format]);
+
+  // Handle path editing - update context-specific suggestions
+  useEffect(() => {
+    if (currentEditingPath && openapiObj) {
+      // Get contextual suggestions based on what the user is typing
+      const contextSuggestions = getContextualSuggestions(
+        openapiObj,
+        currentEditingPath.path
+      );
+
+      // If we have contextual suggestions, prepend them to the full list
+      if (contextSuggestions.length > 0) {
+        setJsonPathSuggestions(prev => {
+          // Remove duplicates when combining
+          const combined = Array.from(new Set([
+            ...contextSuggestions,
+            ...prev.filter(p => !contextSuggestions.includes(p))
+          ]));
+          return combined;
+        });
+      }
+    }
+  }, [currentEditingPath, openapiObj]);
 
   // Toggle between UI and Code modes
   const toggleMode = async () => {
@@ -134,24 +190,42 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
       }
     } else if (field === "target" || field === "value") {
       updatedActions[index][field] = value;
-    }
 
-    if (field === "target") {
-      try {
-        const openapiObj = await parseString(openapi) as Record<string, unknown>;
-        const resolvedValues = resolveJsonPathValue(openapiObj, value);
-        if (resolvedValues.length > 0) {
-          updatedPreviews[index] = await stringify(resolvedValues[0]);
-        } else {
-          updatedPreviews[index] = "No matching value found.";
-        }
-      } catch (e) {
-        updatedPreviews[index] = "Invalid target or JSONPath.";
+      // Track currently editing JSONPath
+      if (field === "target") {
+        setCurrentEditingPath({index, path: value});
       }
     }
 
+    if (field === "target") {
+      // Clear any existing timeout
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+
+      // Set a timeout to update preview (debounce)
+      previewTimeoutRef.current = setTimeout(async () => {
+        try {
+          const resolvedValues = resolveJsonPathValue(openapiObj, value);
+          if (resolvedValues.length > 0) {
+            updatedPreviews[index] = await stringify(resolvedValues[0]);
+          } else {
+            updatedPreviews[index] = "No matching value found.";
+          }
+          setPreviewValues([...updatedPreviews]);
+        } catch (e) {
+          updatedPreviews[index] = "Invalid target or JSONPath.";
+          setPreviewValues([...updatedPreviews]);
+        }
+      }, 300); // 300ms debounce
+    }
+
     setActions(updatedActions);
-    setPreviewValues(updatedPreviews);
+
+    // Only update previews immediately for non-target fields
+    if (field !== "target") {
+      setPreviewValues(updatedPreviews);
+    }
   };
 
   const handleValueChange = (index: number, value: string) => {
@@ -329,13 +403,17 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
                       <div className="flex-1">
                         <div className="mb-2">
                           <label className="block text-sm font-medium mb-1">Target (JSONPath)</label>
-                          <input
-                            type="text"
+                          <JSONPathAutocomplete
                             value={action.target}
-                            onChange={(e) => handleActionChange(index, "target", e.target.value)}
-                            className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+                            onChange={(value) => handleActionChange(index, "target", value)}
+                            suggestions={jsonPathSuggestions}
                             placeholder="$.paths['/example']"
+                            debounceTime={200}
+                            compact={true}
                           />
+                          <div className="text-xs text-gray-500 mt-1">
+                            Press Tab to complete suggestions
+                          </div>
                         </div>
                         <div className="mb-2">
                           <label className="block text-sm font-medium mb-1">Action Type</label>
@@ -516,10 +594,11 @@ export const computePreviewValues = async (
   actions: Action[],
   openapi: string
 ): Promise<string[]> => {
+  const openapiObj = await parseString(openapi) as Record<string, unknown>;
+
   return Promise.all(
     actions.map(async (action) => {
       try {
-        const openapiObj = await parseString(openapi) as Record<string, unknown>;
         const resolvedValues = resolveJsonPathValue(openapiObj, action.target || "");
         return resolvedValues.length > 0
           ? await stringify(resolvedValues[0])
