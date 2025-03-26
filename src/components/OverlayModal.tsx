@@ -1,6 +1,7 @@
 // components/ActionsModal.tsx
 
 import React, { useState, useEffect, useRef } from "react";
+import { loadOverlayFromStorage, saveOverlayToStorage } from "@/utils";
 import SimpleModal from "./SimpleModal";
 import MonacoEditorWrapper from "./MonacoEditorWrapper";
 
