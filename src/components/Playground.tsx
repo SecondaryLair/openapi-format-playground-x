@@ -124,7 +124,7 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
   const dGenerateSet = useDebounce(generateSet, 1000);
   const dCasingSet = useDebounce(casingSet, 1000);
 
-  const config = {
+  const config: PlaygroundConfig = {
     sort,
     keepComments,
     filterSet,
@@ -139,7 +139,7 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
     outputLanguage,
     pathSort,
     defaultFieldSorting
-  } || {} as PlaygroundConfig;
+  };
 
   // Load saved state on mount
   useEffect(() => {
