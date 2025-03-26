@@ -33,7 +33,10 @@ interface ActionsModalProps {
 }
 
 const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSubmit, overlaySet, openapi, format}) => {
-  const [actions, setActions] = useState<Action[]>([]);
+  const [actions, setActions] = useState<Action[]>(() => {
+    const savedActions = typeof window !== 'undefined' ? localStorage.getItem('overlayActions') : null;
+    return savedActions ? JSON.parse(savedActions) : [];
+  });
   const [previewValues, setPreviewValues] = useState<string[]>([]);
   const [currentMode, setCurrentMode] = useState<"UI" | "Code">("UI");
   const [overlaySetCode, setOverlaySetCode] = useState<string>(loadOverlayFromStorage() || "");
@@ -156,28 +159,38 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
   };
 
   const handleAddAction = (index?: number) => {
+    let newActions: Action[];
+    let newPreviews: string[];
+
     if (index !== undefined) {
       // Insert action at the specified index + 1
-      setActions([
+      newActions = [
         ...actions.slice(0, index + 1),
         { target: "", type: "update" },
         ...actions.slice(index + 1),
-      ]);
-      setPreviewValues([
+      ];
+      newPreviews = [
         ...previewValues.slice(0, index + 1),
         "",
         ...previewValues.slice(index + 1),
-      ]);
+      ];
     } else {
       // Default behavior: Add action at the end
-      setActions([...actions, { target: "", type: "update" }]);
-      setPreviewValues([...previewValues, ""]);
+      newActions = [...actions, { target: "", type: "update" }];
+      newPreviews = [...previewValues, ""];
     }
+
+    setActions(newActions);
+    setPreviewValues(newPreviews);
+    localStorage.setItem('overlayActions', JSON.stringify(newActions));
   };
 
   const handleRemoveAction = (index: number) => {
-    setActions(actions.filter((_, i) => i !== index));
-    setPreviewValues(previewValues.filter((_, i) => i !== index));
+    const newActions = actions.filter((_, i) => i !== index);
+    const newPreviews = previewValues.filter((_, i) => i !== index);
+    setActions(newActions);
+    setPreviewValues(newPreviews);
+    localStorage.setItem('overlayActions', JSON.stringify(newActions));
   };
 
   const handleActionChange = async (index: number, field: keyof Action, value: string) => {
@@ -222,6 +235,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
     }
 
     setActions(updatedActions);
+    localStorage.setItem('overlayActions', JSON.stringify(updatedActions));
 
     // Only update previews immediately for non-target fields
     if (field !== "target") {
@@ -246,6 +260,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
 
     setActions(updatedActions);
     setPreviewValues(updatedPreviews);
+    localStorage.setItem('overlayActions', JSON.stringify(updatedActions));
   };
 
   const handleMoveDown = (index: number) => {
@@ -259,6 +274,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
 
     setActions(updatedActions);
     setPreviewValues(updatedPreviews);
+    localStorage.setItem('overlayActions', JSON.stringify(updatedActions));
   };
 
   const handleInfoChange = (field: keyof typeof info, value: string) => {
