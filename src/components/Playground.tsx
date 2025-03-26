@@ -95,6 +95,14 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
   const [isSortModalOpen, setSortModalOpen] = useState(false);
   const [isFormModalOpen, setFormModalOpen] = useState(false);
   const [isOverlayModalOpen, setOverlayModalOpen] = useState(false);
+  const [editorMounted, setEditorMounted] = useState(false);
+
+  useEffect(() => {
+    setEditorMounted(true);
+    return () => {
+      setEditorMounted(false);
+    };
+  }, []);
   const [isInstructionsModalOpen, setInstructionsModalOpen] = useState(false);
   const [isRawConfigModalOpen, setRawConfigModalOpen] = useState(false);
   const [filterFormOptions, setFilterFormOptions] = useState<AnalyzeOpenApiResult>({});
@@ -611,7 +619,7 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
                   </div>
                 )}
               </div>
-              {!isFilterOptionsCollapsed && (
+              {!isFilterOptionsCollapsed && editorMounted && (
                 <div>
                   <MonacoEditorWrapper value={filterSet} onChange={setFilterSet} height='36vh'/>
                 </div>
@@ -688,7 +696,7 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
                 <ButtonUpload context="playground" onFileLoad={handleFileLoad}/>
               </div>
             </div>
-            <MonacoEditorWrapper value={input} onChange={handleInputChange}/>
+            {editorMounted && <MonacoEditorWrapper value={input} onChange={handleInputChange}/>}
           </div>
 
           <div className="flex-1 flex flex-col">
@@ -719,7 +727,7 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
                 <ButtonDownload content={output} filename="openapi-formatted" format={outputLanguage}/>
               </div>
             </div>
-            <MonacoEditorWrapper value={output} onChange={setOutput}/>
+            {editorMounted && <MonacoEditorWrapper value={output} onChange={setOutput}/>}
           </div>
         </div>
       </div>
