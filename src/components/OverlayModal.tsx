@@ -35,7 +35,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
   const [actions, setActions] = useState<Action[]>([]);
   const [previewValues, setPreviewValues] = useState<string[]>([]);
   const [currentMode, setCurrentMode] = useState<"UI" | "Code">("UI");
-  const [overlaySetCode, setOverlaySetCode] = useState<string>("");
+  const [overlaySetCode, setOverlaySetCode] = useState<string>(loadOverlayFromStorage() || "");
   const [info, setInfo] = useState<{ title: string; version: string }>({
     title: "",
     version: "",
@@ -277,10 +277,15 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
   };
 
   const handleCodeChange = async (newCode: string) => {
-    const parsedOverlaySet = await parseString(newCode);
-    const updatedActions = await convertOverlaySetToActions(parsedOverlaySet, format);
-    setActions(updatedActions);
-    setOverlaySetCode(newCode);
+    try {
+      const parsedOverlaySet = await parseString(newCode);
+      const updatedActions = await convertOverlaySetToActions(parsedOverlaySet, format);
+      setActions(updatedActions);
+      setOverlaySetCode(newCode);
+      saveOverlayToStorage(newCode);
+    } catch (error) {
+      console.error("Error parsing overlay code:", error);
+    }
   };
 
   const handleOverlayLoad = async (content: string | null, context: string) => {

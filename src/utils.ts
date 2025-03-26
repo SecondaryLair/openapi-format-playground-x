@@ -82,6 +82,7 @@ export const includeUnusedComponents = (obj: OpenAPIFilterSet, include: boolean)
 // Storage keys
 const STORAGE_KEY = 'openapi-playground-autosave';
 const STORAGE_CONFIG_KEY = 'openapi-playground-config-autosave';
+const STORAGE_OVERLAY_KEY = 'openapi-playground-overlay-autosave';
 
 // Autosave functions
 export const saveToStorage = (openapi: string, config: PlaygroundConfig) => {
@@ -110,6 +111,24 @@ export const loadFromStorage = (): {openapi?: string; config?: PlaygroundConfig}
 export const clearStorage = () => {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(STORAGE_CONFIG_KEY);
+  localStorage.removeItem(STORAGE_OVERLAY_KEY);
+};
+
+export const saveOverlayToStorage = (overlay: string) => {
+  try {
+    localStorage.setItem(STORAGE_OVERLAY_KEY, overlay);
+  } catch (e) {
+    console.warn('Failed to save overlay to localStorage', e);
+  }
+};
+
+export const loadOverlayFromStorage = (): string | undefined => {
+  try {
+    return localStorage.getItem(STORAGE_OVERLAY_KEY) || undefined;
+  } catch (e) {
+    console.warn('Failed to load overlay from localStorage', e);
+    return undefined;
+  }
 };
 
 export const includePreserve = (obj: OpenAPIFilterSet, include: boolean) => {

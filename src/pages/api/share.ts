@@ -7,7 +7,7 @@ export default async function share(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
-  const {openapi, config} = req.body;
+  const {openapi, config, overlay} = req.body;
   if (!openapi || !config) {
     res.status(422).json({message: 'Missing openapi or config'});
     return;
