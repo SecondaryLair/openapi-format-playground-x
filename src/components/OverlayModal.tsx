@@ -39,7 +39,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
   });
   const [previewValues, setPreviewValues] = useState<string[]>([]);
   const [currentMode, setCurrentMode] = useState<"UI" | "Code">("UI");
-  const [overlaySetCode, setOverlaySetCode] = useState<string>(loadOverlayFromStorage() || "");
+  const [overlaySetCode, setOverlaySetCode] = useState<string>("");
   const [info, setInfo] = useState<{ title: string; version: string }>({
     title: "",
     version: "",
@@ -55,7 +55,14 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
       const OverlayOpts = (await parseString(overlaySet)) as Record<string, unknown>;
       const actions = await convertOverlaySetToActions(OverlayOpts, format);
       setActions(actions);
-      setOverlaySetCode(overlaySet);
+      
+      // Only load from localStorage on client side
+      if (typeof window !== 'undefined') {
+        const savedOverlay = loadOverlayFromStorage();
+        setOverlaySetCode(savedOverlay || overlaySet);
+      } else {
+        setOverlaySetCode(overlaySet);
+      }
 
       const previews = await computePreviewValues(actions, openapi);
       setPreviewValues(previews);
@@ -299,7 +306,11 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
       const updatedActions = await convertOverlaySetToActions(parsedOverlaySet, format);
       setActions(updatedActions);
       setOverlaySetCode(newCode);
-      saveOverlayToStorage(newCode);
+      
+      // Only save to localStorage on client side
+      if (typeof window !== 'undefined') {
+        saveOverlayToStorage(newCode);
+      }
     } catch (error) {
       console.error("Error parsing overlay code:", error);
     }
