@@ -19,7 +19,7 @@ import {
   stringify
 } from "openapi-format";
 import {OpenAPIV3} from "openapi-types";
-import {DecodedShareUrl, decodeShareUrl, includePreserve, includeUnusedComponents} from "@/utils";
+import {DecodedShareUrl, decodeShareUrl, includePreserve, includeUnusedComponents, loadFromStorage, saveToStorage, clearStorage} from "@/utils";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ButtonUpload from "@/components/ButtonUpload";
 import MetricsBar, {ComponentMetrics} from "@/components/MetricsBar";
