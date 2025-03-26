@@ -10,9 +10,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@monaco-editor/react": "^4.6.0",
+    "@monaco-editor/react": "^4.7.0",
     "file-saver": "^2.0.5",
     "js-base64": "^3.7.7",
+    "monaco-editor": "^0.52.2",
     "next": "14.2.22",
     "openapi-format": "^1.25.0",
     "openapi-types": "^12.1.3",
