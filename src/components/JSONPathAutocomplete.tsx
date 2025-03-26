@@ -87,11 +87,12 @@ const JSONPathAutocomplete: React.FC<JSONPathAutocompleteProps> = ({
     // Format the suggestion based on the current context
     let formattedSuggestion = suggestion;
     let newCursorPosition: number;
+    let newInputValue = inputValue; // Initialize with current value
 
     // Handle different insertion scenarios
     if (analysis.isTypingProperty) {
       // Replace the current property being typed
-      const newInputValue =
+      newInputValue =
         inputValue.substring(0, analysis.currentSegmentStart) +
         suggestion +
         inputValue.substring(cursorPosition);
@@ -109,7 +110,7 @@ const JSONPathAutocomplete: React.FC<JSONPathAutocompleteProps> = ({
         insertText = `'${suggestion}'`;
       }
 
-      const newInputValue =
+      newInputValue =
         inputValue.substring(0, analysis.currentSegmentStart) +
         insertText +
         inputValue.substring(cursorPosition);
@@ -132,7 +133,7 @@ const JSONPathAutocomplete: React.FC<JSONPathAutocompleteProps> = ({
       }
       // Default case: Replace after cursor
       else {
-        const newInputValue =
+        newInputValue =
           inputValue.substring(0, cursorPosition) +
           suggestion +
           inputValue.substring(cursorPosition);
