@@ -79,6 +79,39 @@ export const includeUnusedComponents = (obj: OpenAPIFilterSet, include: boolean)
   return obj;
 }
 
+// Storage keys
+const STORAGE_KEY = 'openapi-playground-autosave';
+const STORAGE_CONFIG_KEY = 'openapi-playground-config-autosave';
+
+// Autosave functions
+export const saveToStorage = (openapi: string, config: PlaygroundConfig) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, openapi);
+    localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.warn('Failed to save to localStorage', e);
+  }
+};
+
+export const loadFromStorage = (): {openapi?: string; config?: PlaygroundConfig} => {
+  try {
+    const openapi = localStorage.getItem(STORAGE_KEY);
+    const config = localStorage.getItem(STORAGE_CONFIG_KEY);
+    return {
+      openapi: openapi || undefined,
+      config: config ? JSON.parse(config) : undefined
+    };
+  } catch (e) {
+    console.warn('Failed to load from localStorage', e);
+    return {};
+  }
+};
+
+export const clearStorage = () => {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_CONFIG_KEY);
+};
+
 export const includePreserve = (obj: OpenAPIFilterSet, include: boolean) => {
   if (include) {
     if (!obj.hasOwnProperty('preserveEmptyObjects')) {

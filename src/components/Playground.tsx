@@ -141,6 +141,21 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
     defaultFieldSorting
   } || {} as PlaygroundConfig;
 
+  // Load saved state on mount
+  useEffect(() => {
+    const saved = loadFromStorage();
+    if (saved.openapi) {
+      handleInputChange(saved.openapi);
+    }
+    if (saved.config) {
+      // Apply saved config
+      setSort(saved.config.sort ?? true);
+      setKeepComments(saved.config.keepComments ?? false);
+      setFilterSet(saved.config.filterSet ?? '');
+      // ... other config fields
+    }
+  }, []);
+
   const handleInputChange = useCallback(async (newValue: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -214,6 +229,28 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
     }
     setLoading(false);
   }, [dInput, sort, keepComments, dFilterSet, dSortSet, dGenerateSet, dCasingSet, dOverlaySet, outputLanguage, pathSort, toggleGenerate, toggleCasing, toggleOverlay, setOutput, defaultFieldSorting]);
+
+  // Autosave whenever input or config changes
+  useEffect(() => {
+    if (input) {
+      saveToStorage(input, {
+        sort,
+        keepComments,
+        filterSet,
+        generateSet,
+        casingSet,
+        sortSet,
+        overlaySet,
+        isFilterOptionsCollapsed,
+        toggleGenerate,
+        toggleCasing,
+        toggleOverlay,
+        outputLanguage,
+        pathSort,
+        defaultFieldSorting
+      });
+    }
+  }, [input, sort, keepComments, filterSet, generateSet, casingSet, sortSet, overlaySet, isFilterOptionsCollapsed, toggleGenerate, toggleCasing, toggleOverlay, outputLanguage, pathSort, defaultFieldSorting]);
 
   // Decode Share URL
   useEffect(() => {
@@ -659,6 +696,17 @@ const Playground: React.FC<PlaygroundProps> = ({input, setInput, output, setOutp
               <h2 className="text-heading text-xl font-bold">OpenAPI Output</h2>
               {loading && <LoadingSpinner/>}
               <div className="space-x-2">
+                <button 
+                  onClick={() => {
+                    clearStorage();
+                    setInput('');
+                    setOutput('');
+                  }}
+                  className="bg-red-500 hover:bg-red-700 text-white font-medium text-sm py-1 px-2 rounded"
+                  title="Clear all data"
+                >
+                  Clear
+                </button>
                 <button onClick={openDiffModal}
                         className="bg-white hover:bg-gray-200 text-green-500 font-medium text-sm py-1 px-2 rounded border border-green-500">
                   Show Diff
