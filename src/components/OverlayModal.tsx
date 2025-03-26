@@ -215,6 +215,19 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
       // Track currently editing JSONPath
       if (field === "target") {
         setCurrentEditingPath({index, path: value});
+        // Immediately update preview when target changes
+        try {
+          const resolvedValues = resolveJsonPathValue(openapiObj, value);
+          if (resolvedValues.length > 0) {
+            updatedPreviews[index] = await stringify(resolvedValues[0]);
+          } else {
+            updatedPreviews[index] = "No matching value found.";
+          }
+          setPreviewValues([...updatedPreviews]);
+        } catch (e) {
+          updatedPreviews[index] = "Invalid target or JSONPath.";
+          setPreviewValues([...updatedPreviews]);
+        }
       }
     }
 

@@ -142,8 +142,8 @@ const JSONPathAutocomplete: React.FC<JSONPathAutocompleteProps> = ({
       }
     }
 
-    // Apply the change
-    onChange(inputValue);
+    // Apply the change with the new value
+    onChange(newInputValue);
     setShowSuggestions(false);
 
     // Set cursor position after the update
