@@ -9,6 +9,7 @@ interface JSONPathAutocompleteProps {
   className?: string;
   debounceTime?: number;
   compact?: boolean;
+  previewValue?: string;
 }
 
 const JSONPathAutocomplete: React.FC<JSONPathAutocompleteProps> = ({

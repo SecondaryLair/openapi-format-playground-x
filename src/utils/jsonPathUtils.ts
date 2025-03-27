@@ -624,10 +624,36 @@ export const generatePathSuggestions = (
  * @param cursorPosition Current cursor position
  * @returns Array of relevant path suggestions
  */
+/**
+ * Extract keys from a YAML/JSON string
+ */
+export const extractKeysFromPreview = (preview: string): string[] => {
+  if (!preview) return [];
+  
+  try {
+    const parsed = JSON.parse(preview);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return Object.keys(parsed);
+    }
+  } catch (e) {
+    // If not JSON, try parsing as YAML
+    try {
+      const parsed = require('yaml').parse(preview);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return Object.keys(parsed);
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+  return [];
+};
+
 export const getContextualSuggestions = (
   schema: any,
   currentPath: string,
-  cursorPosition: number = currentPath.length
+  cursorPosition: number = currentPath.length,
+  previewValue?: string
 ): string[] => {
   if (!currentPath || !schema) {
     return DEFAULT_JSONPATH_PARTS;

@@ -16,12 +16,27 @@ interface MonacoEditorProps {
   trimNewline?: boolean;
 }
 
-const MonacoEditorWrapper: React.FC<MonacoEditorProps> = ({value, onChange, language, height, trimNewline = false}) => {
+const MonacoEditorWrapper: React.FC<MonacoEditorProps> = ({
+  value, 
+  onChange, 
+  language, 
+  height, 
+  trimNewline = false,
+  extraSuggestions = []
+}) => {
   let trimmedValue = value
   if(value && trimNewline) {
     trimmedValue = value.replace(/\n+$/, '');
   }
-  return <MonacoEditorComponent value={trimmedValue} onChange={onChange} language={language} height={height}/>;
+  return (
+    <MonacoEditorComponent 
+      value={trimmedValue} 
+      onChange={onChange} 
+      language={language} 
+      height={height}
+      extraSuggestions={extraSuggestions}
+    />
+  );
 };
 
 export default MonacoEditorWrapper;

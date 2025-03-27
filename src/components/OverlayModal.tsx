@@ -14,7 +14,8 @@ import {
   generatePathSuggestions,
   DEFAULT_JSONPATH_PARTS,
   extractOpenAPISpecificPaths,
-  getContextualSuggestions
+  getContextualSuggestions,
+  extractKeysFromPreview
 } from "@/utils/jsonPathUtils";
 
 interface Action {
@@ -482,6 +483,7 @@ const ActionsModal: React.FC<ActionsModalProps> = ({isOpen, onRequestClose, onSu
                               onChange={(value) => handleValueChange(index, value)}
                               height="10vh"
                               language={format}
+                              extraSuggestions={extractKeysFromPreview(previewValues[index])}
                             />
                           </div>
                         )}
