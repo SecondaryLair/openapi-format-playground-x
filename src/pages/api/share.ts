@@ -7,13 +7,17 @@ export default async function share(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
-  const {openapi, config, overlay} = req.body;
-  if (!openapi || !config) {
-    res.status(422).json({message: 'Missing openapi or config'});
-    return;
-  }
-
   try {
+    if (typeof req.body !== 'object' || req.body === null) {
+      throw new Error('Invalid request body');
+    }
+
+    const {openapi, config} = req.body;
+    if (!openapi || typeof openapi !== 'string' || !config || typeof config !== 'object') {
+      res.status(422).json({message: 'Missing or invalid openapi or config parameters'});
+      return;
+    }
+
     const host = req.headers.host;
     const protocol = req.headers['x-forwarded-proto'] || 'https';
     const url = `${protocol}://${host}`;
