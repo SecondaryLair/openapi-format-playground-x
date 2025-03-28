@@ -14,6 +14,7 @@ interface MonacoEditorProps {
   language?: string;
   height?: string;
   trimNewline?: boolean;
+  extraSuggestions?: string[];
 }
 
 const MonacoEditorWrapper: React.FC<MonacoEditorProps> = ({

@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import Editor, {OnMount} from '@monaco-editor/react';
 import * as monacoEditor from 'monaco-editor';
+import type { editor } from 'monaco-editor';
 
 interface MonacoEditorProps {
   value: string;
@@ -11,33 +12,33 @@ interface MonacoEditorProps {
 }
 
 const MonacoEditorComponent: React.FC<MonacoEditorProps> = ({
-  value, 
-  onChange, 
-  language, 
+  value,
+  onChange,
+  language,
   height = '85vh',
   extraSuggestions = []
 }) => {
-  const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [theme, setTheme] = useState<'vs-light' | 'vs-dark'>(
     window.matchMedia('(prefers-color-scheme: dark)').matches ? 'vs-dark' : 'vs-light'
   );
 
-  const handleEditorDidMount: OnMount = async (editor, monaco) => {
+  const handleEditorDidMount: OnMount = async (editor, monacoInstance: typeof monacoEditor) => {
     editorRef.current = editor;
-    monaco.editor.setTheme(theme);
+    monacoInstance.editor.setTheme(theme);
 
     // Register custom completion provider if extraSuggestions are provided
     if (extraSuggestions && extraSuggestions.length > 0) {
       // Configure JSON/YAML language defaults first
       if (language === 'json') {
-        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+        monacoInstance.languages.json.jsonDefaults.setDiagnosticsOptions({
           validate: true,
           allowComments: true,
           schemas: []
         });
       }
 
-      monaco.languages.registerCompletionItemProvider(language || 'yaml', {
+      monacoInstance.languages.registerCompletionItemProvider(language || 'yaml', {
         provideCompletionItems: async (model, position) => {
           const word = model.getWordUntilPosition(position);
           const range = {
@@ -48,31 +49,24 @@ const MonacoEditorComponent: React.FC<MonacoEditorProps> = ({
           };
 
           try {
-            // Get standard language service suggestions first
-            const standardItems = await monaco.languages.json.jsonDefaults.languageService.getCompletionItems(
-              model.uri,
-              position,
-              monaco.languages.json.jsonDefaults.diagnosticsOptions
-            );
-
-            // Combine with our extra suggestions and remove duplicates
-            const allSuggestions = [
-              ...(standardItems?.suggestions || []),
-              ...extraSuggestions.map(suggestion => ({
-                label: suggestion,
-                kind: monaco.languages.CompletionItemKind.Property,
-                insertText: suggestion,
-                range: range
-              }))
-            ];
+            // Combine with our extra suggestions
+            const suggestions = extraSuggestions.map(suggestion => ({
+              label: suggestion,
+              kind: monacoEditor.languages.CompletionItemKind.Property,
+              insertText: suggestion,
+              range: range
+            }));
 
             // Remove duplicates by label while preserving order
-            const uniqueSuggestions = allSuggestions.reduce((acc, current) => {
-              if (!acc.some(item => item.label === current.label)) {
-                acc.push(current);
-              }
-              return acc;
-            }, [] as monaco.languages.CompletionItem[]);
+            const uniqueSuggestions = suggestions.reduce(
+              (acc: monacoEditor.languages.CompletionItem[], current) => {
+                if (!acc.some((item: monacoEditor.languages.CompletionItem) => item.label === current.label)) {
+                  acc.push(current);
+                }
+                return acc;
+              },
+              []
+            );
 
             return { suggestions: uniqueSuggestions };
           } catch (error) {
@@ -121,7 +115,7 @@ const MonacoEditorComponent: React.FC<MonacoEditorProps> = ({
     }
   }
 
-  const editorOptions = {
+  const editorOptions: editor.IStandaloneEditorConstructionOptions = {
     fontFamily: '"Cascadia Code", "Jetbrains Mono", "Fira Code", "Menlo", "Consolas", monospace',
     fontLigatures: true,
     fontSize: 12,
