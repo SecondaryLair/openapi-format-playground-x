@@ -8,7 +8,7 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml* .npmrc* ./
-RUN pnpm run install
+RUN pnpm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
